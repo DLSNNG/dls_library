@@ -1,0 +1,13 @@
+name = dls_library
+description = Description of dls_library.
+core = 7.x
+package = "DLS"
+version = VERSION
+
+; Files
+files[] = dls_library.module
+
+; Dependencies
+dependencies[] = dls_rest_routes
+dependencies[] = dls_resource
+dependencies[] = dls_components

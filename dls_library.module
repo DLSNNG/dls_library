@@ -1,0 +1,181 @@
+
+<?php
+
+  /**
+   * @file dls_library module.
+   */
+  
+  //---------------------------------------------------------------------------------------------------------------------------
+  // Hooks and preprocess functions
+  //---------------------------------------------------------------------------------------------------------------------------
+  
+  /**
+   * Implementation of hook_permission().
+   * Set permissions for module
+   */
+  function dls_library_permission() {
+    return array(
+        'view dls_library' => array(
+            'title' => 'View dls_library Pages',
+            'description' => t('Allow user to view dls_library pages.')
+        ),
+    );
+  }
+  
+  /**
+   * Implements hook_menu().
+   *
+   * @return array
+   */
+  function dls_library_menu() {
+    $routes = array();
+    $path = drupal_get_path('module', 'dls_library') . '/includes/views';
+    
+    $routes['dls_library/home'] = array( 
+      'title' => 'dls_library home', 
+      'page callback' => 'view_dls_library_home', 
+      'access arguments' => array('view dls_library'), 
+      'file path' => $path . '/home', 
+      'file' => 'dls_library.home.inc', 
+    ); 
+    
+    return $routes;
+  }
+  
+  /**
+   * Implements hook_theme
+   */
+  
+  function dls_library_theme() {
+    $themes = array();
+  
+    $themes['object_list']['variables'] = array( 
+   		'objects' => NULL, 
+   		'itemProps' => NULL, 
+   		'class' => 'list', 
+   	);
+  
+    $themes['object_link_list']['variables'] = array( 
+   		'objects' => NULL, 
+   		'displayProp' => NULL, 
+   		'baseURL' => NULL, 
+   		'queryParamMap' => NULL,
+   		'class' => 'list',
+   	); 
+  
+    $themes['list_item']['variables'] = array( 
+   		'display' => NULL, 
+   	); 
+  
+    $themes['link_list_item']['variables'] = array( 
+   		'display' => NULL, 
+   		'url' => NULL, 
+   	); 
+  
+    $themes['custom_button']['variables'] = array( 
+   		'display' => NULL, 
+   		'url' => NULL, 
+   		'class' => 'button', 
+   	); 
+  
+    $themes['object_table']['variables'] = array( 
+   		'objects' => NULL, 
+   		'mapping' => NULL, 
+   		'class' => 'object-table', 
+   	); 
+  
+    $themes['object_link_table']['variables'] = array( 
+   		'objects' => NULL, 
+   		'mapping' => NULL, 
+   		'class' => NULL, 
+   	); 
+   	
+   	// We use 'render element' when the item to be passed is a self-describing
+    // render array (it will have #theme_wrappers)
+   	// $themes['test_element']['render element'] = 'element';
+
+    $themes['home_page']['variables'] = array( 
+   		'objects' => NULL, 
+   		'target' => NULL, 
+   		'field1' => '',
+   		'field2' => '',
+   	); 
+
+    return $themes;
+  }
+  
+  /**
+   * Implements hook_element_info()
+   */
+
+  function dls_library_element_info() {
+    $elements['regex_textfield'] = array(
+      '#input' => TRUE,
+      '#theme' => array('textfield'),
+      '#autocomplete_path' => FALSE,
+      '#theme_wrappers' => array('form_element'),
+      '#regex' => FALSE,
+      '#regex_message' => FALSE,
+      '#element_validate' => array('dls_library_regex_validate'),
+    );
+    
+    $elements['state_form'] = array(
+      '#theme' => array('form'),
+      '#executes_submit_callback' => TRUE,
+      '#params_map' => FALSE, // queryParam => fieldName mapping
+      '#target_url' => FALSE,
+      '#pre_render' => array('state_form_prerender'),
+      '#submit' => array('state_form_save_state'), // this needs to be set in form implementation. doesn't save as default for some reason
+    );
+    
+    return $elements;
+  }
+  
+  /**
+   * Custom form handlers
+   */
+  
+  function state_form_prerender($form) {
+    // get current state from query parameters
+    $params = drupal_get_query_parameters();
+    // grab param map assigned in the state_form
+    $paramsMap = $form['#params_map'];
+    // loop through all params assigned in params map
+    foreach($paramsMap as $name => $field) {
+      // check if field is valid and a value is saved in the query params
+      if(isset($form[$field]) && isset($params[$name])) {
+        // if so, then set the value of that field to match what was saved in query params
+        $form[$field]['#value'] = $params[$name];
+      }
+    }
+    return $form;
+  }
+  
+  function state_form_save_state($form, &$form_state) {
+    // grab settings from form
+    $paramsMap = $form['#params_map'];
+    $target = isset($form['#target_url']) ? $form['#target_url'] : current_path();
+    // get user supplied input
+    $input = $form_state['input'];
+    // loop through each param set in element and map to query params
+    $params = array();
+    foreach($paramsMap as $name => $field) {
+      $params[$name] = $input[$field];
+    }
+    // redirect to target using query params
+    drupal_goto($target, array('query' => $params));
+  }
+  
+  /**
+   * Custom field validations
+   */
+   
+   function dls_library_regex_validate($element, &$form_state) {
+    $value = $element['#value'];
+    $regex = $element['#regex'];
+    $regexMessage = $element['#regex_message'];
+    $matches = preg_match($regex, $value);
+    if(!$matches) {
+      form_error($element, $regexMessage);
+    }
+  }

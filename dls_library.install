@@ -1,0 +1,40 @@
+<?php
+
+  module_load_include('inc', 'dls_rest_routes', '/includes/models/dls_rest_routes.rest_routes');
+  module_load_include('inc', 'dls_rest_routes', '/includes/models/dls_rest_routes.rest_credentials');
+
+  /**
+   * Implements hook_install()
+   */
+   
+  function dls_library_install() {
+    $restRoutes = RestRoutes::get()
+      ->setRoute('dls_library', 'TestRoute', 'http://localhost.com')
+      ->save();
+    $restCredentials = RestCredentials::get()
+      ->setCredentials('dls_library')
+      ->save();
+  }
+
+  /**
+   * Implements hook_uninstall().
+   */
+  function dls_library_uninstall() {
+    //remove route
+    $restRoutes = RestRoutes::get()
+      ->removeGroup('dls_library')
+      ->save();
+    //remove credentials
+    $restCredentials = RestCredentials::get()
+      ->removeCredentials('dls_library')
+      ->save();
+    // remove variables
+    $vars = array(
+    );
+    if (!empty($vars)) {
+      foreach ($vars as $var):
+        variable_del($var);
+      endforeach;
+    }
+  }
+
